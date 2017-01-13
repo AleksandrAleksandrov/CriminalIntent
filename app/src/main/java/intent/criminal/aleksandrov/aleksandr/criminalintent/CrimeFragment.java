@@ -1,7 +1,5 @@
 package intent.criminal.aleksandrov.aleksandr.criminalintent;
 
-import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -25,7 +23,6 @@ public class CrimeFragment extends Fragment {
 
     private static final String ARG_CRIME_ID = "crime_id";
     private static final String ITEM_POSITION = "item_position";
-    private int itemPosition;
 
     private Crime mCrime;
     private EditText mTitleField;
@@ -46,9 +43,7 @@ public class CrimeFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         UUID crimeId = (UUID) getArguments().getSerializable(ARG_CRIME_ID);
-        itemPosition = getArguments().getInt(ITEM_POSITION);
         mCrime = CrimeLab.get(getActivity()).getCrime(crimeId);
-        returnResult();
     }
 
     @Nullable
@@ -87,9 +82,5 @@ public class CrimeFragment extends Fragment {
             }
         });
         return view;
-    }
-
-    public void returnResult() {
-        getActivity().setResult(Activity.RESULT_OK, new Intent().putExtra(CrimeListFragment.TAG_REQUEST_ITEM_POSITION, itemPosition));
     }
 }
