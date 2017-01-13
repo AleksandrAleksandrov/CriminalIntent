@@ -1,5 +1,6 @@
 package intent.criminal.aleksandrov.aleksandr.criminalintent;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -10,7 +11,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.List;
 
@@ -20,8 +20,14 @@ import java.util.List;
 
 public class CrimeListFragment extends Fragment {
 
+    public static final String TAG_REQUEST_ITEM_POSITION = "request_item_position";
+
+    private static final int REQUEST_CRIME = 1;
+
     private RecyclerView mCrimeRecyclerView;
     private CrimeAdapter mAdapter;
+
+    private int mChangePosition;
 
     @Nullable
     @Override
@@ -38,8 +44,26 @@ public class CrimeListFragment extends Fragment {
     private void updateUI() {
         CrimeLab crimeLab = CrimeLab.get(getActivity());
         List<Crime> crimes = crimeLab.getCrimes();
-        mAdapter = new CrimeAdapter(crimes);
-        mCrimeRecyclerView.setAdapter(mAdapter);
+
+        if (mAdapter == null) {
+            mAdapter = new CrimeAdapter(crimes);
+            mCrimeRecyclerView.setAdapter(mAdapter);
+        } else {
+            mAdapter.notifyItemChanged(mChangePosition);
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateUI();
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_CRIME) {
+            mChangePosition = data.getIntExtra(TAG_REQUEST_ITEM_POSITION, 0);
+        }
     }
 
     private class CrimeHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
@@ -48,6 +72,7 @@ public class CrimeListFragment extends Fragment {
         private CheckBox mSolvedCheckBox;
 
         private Crime mCrime;
+        private int mItemPosition;
 
         public CrimeHolder(View itemView) {
             super(itemView);
@@ -57,16 +82,25 @@ public class CrimeListFragment extends Fragment {
             mSolvedCheckBox = (CheckBox) itemView.findViewById(R.id.list_item_crime_solved_check_box);
         }
 
-        public void bindCrime(Crime crime) {
+        /**
+         *
+         * @param crime
+         * @param itemPosition получаем позицию выбранного елемента для того чтобы в слушателе нажатия передать его созданному фрагменту. А потом фрагмент передаст его обратно при
+         *                     закрытии чтобы RecyclerView вызывал не notifyDataSetChanged() метод который обновляет весь список, а notifyItemChanged(int) для обновления только измененного
+         *                     елемента.
+         */
+        public void bindCrime(Crime crime, int itemPosition) {
             mCrime = crime;
             mTitleTextView.setText(mCrime.getTitle());
             mDateTextView.setText(mCrime.getDate().toString());
             mSolvedCheckBox.setChecked(mCrime.isSolved());
+            mItemPosition = itemPosition;
         }
 
         @Override
         public void onClick(View view) {
-            Toast.makeText(getActivity(), mCrime.getTitle() + " clicked!", Toast.LENGTH_SHORT).show();
+            Intent intent = CrimeActivity.newIntent(getActivity(), mCrime.getId(), mItemPosition);
+            startActivityForResult(intent, REQUEST_CRIME);
         }
     }
 
@@ -87,7 +121,7 @@ public class CrimeListFragment extends Fragment {
         @Override
         public void onBindViewHolder(CrimeHolder holder, int position) {
             Crime crime = mCrimes.get(position);
-            holder.bindCrime(crime);
+            holder.bindCrime(crime, position);
         }
 
         @Override
