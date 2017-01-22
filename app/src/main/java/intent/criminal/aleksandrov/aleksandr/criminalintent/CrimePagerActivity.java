@@ -6,10 +6,10 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.support.v7.app.AppCompatActivity;
 
 import java.util.List;
 import java.util.UUID;
@@ -18,19 +18,22 @@ import java.util.UUID;
  * Created by aleksandr on 1/13/17.
  */
 
-public class CrimePagerActivity extends FragmentActivity {
+public class CrimePagerActivity extends AppCompatActivity {
 
     private static final String EXTRA_CRIME_ID = "intent.criminal.aleksandrov.aleksandr.criminalintent.crime_id";
     private static final String EXTRA_LIST_POSITION = "intent.criminal.aleksandrov.aleksandr.criminalintent.list_position";
+    private static final String EXTRA_SUBTITLE_VISIBLE = "subtitle";
 
     private ViewPager mViewPager;
     private List<Crime> mCrimes;
     private int mItemPosition;
+    private boolean mSuitableVisible;
 
-    public static Intent newIntent(Context packageContext, UUID crimeId, int position) {
+    public static Intent newIntent(Context packageContext, UUID crimeId, boolean subtitleVisible) {
         Intent intent = new Intent(packageContext, CrimePagerActivity.class);
         intent.putExtra(EXTRA_CRIME_ID, crimeId);
-        intent.putExtra(EXTRA_LIST_POSITION, position);
+        intent.putExtra(EXTRA_SUBTITLE_VISIBLE, subtitleVisible);
+//        intent.putExtra(EXTRA_LIST_POSITION, position);
         return intent;
     }
 
@@ -41,6 +44,7 @@ public class CrimePagerActivity extends FragmentActivity {
 
         UUID crimeId = (UUID) getIntent().getSerializableExtra(EXTRA_CRIME_ID);
         mItemPosition = getIntent().getIntExtra(EXTRA_LIST_POSITION, 0);
+        mSuitableVisible = getIntent().getBooleanExtra(EXTRA_SUBTITLE_VISIBLE, false);
 
         mViewPager = (ViewPager) findViewById(R.id.activity_crime_pager_view_pager);
         mCrimes = CrimeLab.get(this).getCrimes();
@@ -65,6 +69,12 @@ public class CrimePagerActivity extends FragmentActivity {
             }
         }
         returnResult();
+    }
+
+    @Nullable
+    @Override
+    public Intent getParentActivityIntent() {
+        return super.getParentActivityIntent().putExtra(EXTRA_SUBTITLE_VISIBLE, mSuitableVisible);
     }
 
     public void returnResult() {

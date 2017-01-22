@@ -1,7 +1,5 @@
 package intent.criminal.aleksandrov.aleksandr.criminalintent;
 
-import android.text.format.DateFormat;
-
 import java.util.Date;
 import java.util.UUID;
 
@@ -34,8 +32,9 @@ public class Crime {
         return mId;
     }
 
-    public CharSequence getDate() {
-        return DateFormat.format("EEEE, MMM d, yyyy", mDate);
+    public Date getDate() {
+//        return DateFormat.format("EEEE, MMM d, yyyy", mDate);
+        return mDate;
     }
 
     public void setDate(Date date) {
