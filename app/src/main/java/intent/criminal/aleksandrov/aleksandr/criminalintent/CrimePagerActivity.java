@@ -71,6 +71,12 @@ public class CrimePagerActivity extends AppCompatActivity {
         returnResult();
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        finish();
+    }
+
     @Nullable
     @Override
     public Intent getParentActivityIntent() {
