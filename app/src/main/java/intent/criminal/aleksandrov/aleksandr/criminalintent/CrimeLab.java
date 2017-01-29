@@ -50,7 +50,7 @@ public class CrimeLab {
     }
 
     public void deleteCrime(Crime crime) {
-
+        mDatabase.delete(CrimeTable.NAME, CrimeTable.Cols.UUID + " = ?", new String[] {crime.getId().toString()});
     }
 
     public List<Crime> getCrimes() {
