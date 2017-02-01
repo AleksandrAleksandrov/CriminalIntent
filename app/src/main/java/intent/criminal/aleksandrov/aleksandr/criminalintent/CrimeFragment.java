@@ -2,6 +2,7 @@ package intent.criminal.aleksandrov.aleksandr.criminalintent;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -9,6 +10,7 @@ import android.provider.ContactsContract;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.ShareCompat;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.text.format.DateFormat;
@@ -22,6 +24,8 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.provider.ContactsContract.Data;
+import android.provider.ContactsContract.CommonDataKinds.Phone;
 
 import java.util.Date;
 import java.util.UUID;
@@ -38,10 +42,11 @@ public class CrimeFragment extends Fragment {
 
     private static final int REQUEST_DATE = 0;
     private static final int REQUEST_CONTACT = 1;
+    private static final int REQUEST_CONTACT_CALL = 2;
 
     private Crime mCrime;
     private EditText mTitleField;
-    private Button mDateButton, mReportButton, mSuspectButton;
+    private Button mDateButton, mReportButton, mSuspectButton, mCallToSuspectButton;
     private CheckBox mSolvedCheckBox;
 
     public static CrimeFragment newInstance(UUID crimeId, int itemPosition) {
@@ -82,17 +87,25 @@ public class CrimeFragment extends Fragment {
         mReportButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(Intent.ACTION_SEND);
-                intent.setType("text/plain");
-                intent.putExtra(Intent.EXTRA_TEXT, getCrimeReport());
-                intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.crime_report_subject));
-                // Создаеться список который будет отображаться каждый раз при использовании неявного интента для запуска активности.
-                intent = Intent.createChooser(intent, getString(R.string.send_report));
-                startActivity(intent);
+//                Intent intent = new Intent(Intent.ACTION_SEND);
+//                intent.setType("text/plain");
+//                intent.putExtra(Intent.EXTRA_TEXT, getCrimeReport());
+//                intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.crime_report_subject));
+//                // Создаеться список который будет отображаться каждый раз при использовании неявного интента для запуска активности.
+//                intent = Intent.createChooser(intent, getString(R.string.send_report));
+//                startActivity(intent);
+
+                ShareCompat.IntentBuilder intentBuilder = ShareCompat.IntentBuilder.from(getActivity())
+                        .setText(getCrimeReport())
+                        .setSubject(getString(R.string.crime_report_subject))
+                        .setType("text/plain").setChooserTitle(getString(R.string.send_report));
+                intentBuilder.startChooser();
             }
         });
 
         final Intent pickContact = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
+        // Эта категория ничего не делает, а только предотвращает возможные совпадения контактныъх приложений с вашим интентом.
+//        pickContact.addCategory(Intent.CATEGORY_HOME);
         mSuspectButton = (Button) view.findViewById(R.id.crime_suspect);
         mSuspectButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -105,6 +118,18 @@ public class CrimeFragment extends Fragment {
             mSuspectButton.setText(mCrime.getSuspect());
         }
 
+        PackageManager packageManager = getActivity().getPackageManager();
+        if (packageManager.resolveActivity(pickContact, PackageManager.MATCH_DEFAULT_ONLY) == null) {
+            mSuspectButton.setEnabled(false);
+        }
+
+        mCallToSuspectButton = (Button) view.findViewById(R.id.call_to_suspect);
+        mCallToSuspectButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivityForResult(pickContact, REQUEST_CONTACT_CALL);
+            }
+        });
         mSolvedCheckBox = (CheckBox) view.findViewById(R.id.crime_solved);
         mSolvedCheckBox.setChecked(mCrime.isSolved());
         mSolvedCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -176,7 +201,7 @@ public class CrimeFragment extends Fragment {
                 if (cursor.getCount() == 0) {
                     return;
                 }
-                // Извление первого столбца данных - имени подозреваемого.
+                // Извлечение первого столбца данных - имени подозреваемого.
                 cursor.moveToFirst();
                 String suspect = cursor.getString(0);
                 mCrime.setSuspect(suspect);
@@ -184,9 +209,42 @@ public class CrimeFragment extends Fragment {
             } finally {
                 cursor.close();
             }
+        } else if (requestCode == REQUEST_CONTACT_CALL && data != null) {
+            Uri contactUri = data.getData();
+
+
+            String[] queryFields = new String[] {Phone._ID};
+
+            Cursor cursor = getActivity().getContentResolver().query(contactUri, queryFields, null, null, null);
+
+            try {
+                // Проверка получения результатов
+                if (cursor.getCount() == 0) {
+                    return;
+                }
+                // Извлечение первого столбца данных - имени подозреваемого.
+                cursor.moveToFirst();
+                String suspect = cursor.getString(0);
+                Cursor cursorForNumber = getActivity().getContentResolver().query(Phone.CONTENT_URI, null, Phone.CONTACT_ID + " = " + suspect, null, null);
+                try {
+                    if (cursorForNumber.getCount() == 0) {
+                        return;
+                    }
+                    cursorForNumber.moveToFirst();
+                    String number = cursorForNumber.getString(cursorForNumber.getColumnIndex(Phone.NUMBER));
+                    makeACall(number);
+                } finally {
+                    cursorForNumber.close();
+                }
+            } finally {
+                cursor.close();
+            }
         }
+    }
 
-
+    private void makeACall(String number) {
+        Intent intent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + number));
+        startActivity(intent);
     }
 
     private void updateDate() {
