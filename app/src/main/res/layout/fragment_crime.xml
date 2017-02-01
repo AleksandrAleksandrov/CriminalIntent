@@ -10,15 +10,6 @@
         android:text="@string/crime_title_label"
         style="?android:listSeparatorTextViewStyle"/>
 
-    <TextView
-        android:text="android:layout_width=&quot;match_parent&quot;
-        android:layout_height=&quot;wrap_content&quot;
-        android:layout_marginLeft=&quot;16dp&quot;
-        android:layout_marginRight=&quot;16dp&quot;"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/textView"/>
-
     <EditText
         android:id="@+id/crime_title"
         android:layout_width="match_parent"
