@@ -1,5 +1,6 @@
 package intent.criminal.aleksandrov.aleksandr.criminalintent;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -7,10 +8,13 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.ShareCompat;
+import android.support.v4.content.ContextCompat;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.text.format.DateFormat;
@@ -43,11 +47,14 @@ public class CrimeFragment extends Fragment {
     private static final int REQUEST_DATE = 0;
     private static final int REQUEST_CONTACT = 1;
     private static final int REQUEST_CONTACT_CALL = 2;
+    private static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 3;
 
     private Crime mCrime;
     private EditText mTitleField;
     private Button mDateButton, mReportButton, mSuspectButton, mCallToSuspectButton;
     private CheckBox mSolvedCheckBox;
+
+    final Intent pickContact = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
 
     public static CrimeFragment newInstance(UUID crimeId, int itemPosition) {
         Bundle args = new Bundle();
@@ -103,7 +110,7 @@ public class CrimeFragment extends Fragment {
             }
         });
 
-        final Intent pickContact = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
+
         // Эта категория ничего не делает, а только предотвращает возможные совпадения контактныъх приложений с вашим интентом.
 //        pickContact.addCategory(Intent.CATEGORY_HOME);
         mSuspectButton = (Button) view.findViewById(R.id.crime_suspect);
@@ -127,7 +134,25 @@ public class CrimeFragment extends Fragment {
         mCallToSuspectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startActivityForResult(pickContact, REQUEST_CONTACT_CALL);
+                if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.READ_CONTACTS)) {
+
+                        // Show an explanation to the user *asynchronously* -- don't block
+                        // this thread waiting for the user's response! After the user
+                        // sees the explanation, try again to request the permission.
+                        ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.READ_CONTACTS}, MY_PERMISSIONS_REQUEST_READ_CONTACTS);
+                    } else {
+                        // No explanation needed, we can request the permission.
+
+                        ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.READ_CONTACTS}, MY_PERMISSIONS_REQUEST_READ_CONTACTS);
+
+                        // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                        // app-defined int constant. The callback method gets the
+                        // result of the request.
+                    }
+                } else {
+                    startActivityForResult(pickContact, REQUEST_CONTACT_CALL);
+                }
             }
         });
         mSolvedCheckBox = (CheckBox) view.findViewById(R.id.crime_solved);
@@ -239,6 +264,19 @@ public class CrimeFragment extends Fragment {
             } finally {
                 cursor.close();
             }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_READ_CONTACTS:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    startActivityForResult(pickContact, REQUEST_CONTACT_CALL);
+                } else {
+
+                }
+                return;
         }
     }
 
