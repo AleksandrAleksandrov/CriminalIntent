@@ -16,6 +16,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.ShareCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
@@ -48,6 +49,7 @@ public class CrimeFragment extends Fragment {
     private static final String ARG_CRIME_ID = "crime_id";
     private static final String ITEM_POSITION = "item_position";
     private static final String DIALOG_DATE = "DialogDate";
+    private static final String IMAGE_DIALOG_FRAGMENT = "image_dialog_fragment";
 
     private static final int REQUEST_DATE = 0;
     private static final int REQUEST_CONTACT = 1;
@@ -145,6 +147,19 @@ public class CrimeFragment extends Fragment {
 
         mPhotoButton = (ImageButton) view.findViewById(R.id.crime_camera);
         mPhotoView = (ImageView) view.findViewById(R.id.crime_photo);
+        mPhotoView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+                Fragment fragment = getFragmentManager().findFragmentByTag(IMAGE_DIALOG_FRAGMENT);
+                if (fragment != null) {
+                    fragmentTransaction.remove(fragment);
+                }
+
+                FullPictureDialogFragment fullPictureDialogFragment = FullPictureDialogFragment.newInstance(mPhotoFile);
+                fullPictureDialogFragment.show(fragmentTransaction, IMAGE_DIALOG_FRAGMENT);
+            }
+        });
         updatePhotoView();
 
         boolean canTakePhoto = mPhotoFile != null && captureImage.resolveActivity(packageManager) != null;
