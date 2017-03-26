@@ -65,6 +65,7 @@ public class CrimeFragment extends Fragment {
     private CheckBox mSolvedCheckBox;
     private ImageView mPhotoView;
     private ImageButton mPhotoButton;
+    private Callbacks mCallbacks;
 
     final Intent pickContact = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
     final Intent captureImage = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
@@ -73,6 +74,16 @@ public class CrimeFragment extends Fragment {
         Bundle args = new Bundle();
         args.putSerializable(ARG_CRIME_ID, crimeId);
         args.putInt(ITEM_POSITION, itemPosition);
+
+        CrimeFragment fragment = new CrimeFragment();
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    public static CrimeFragment newInstance(UUID crimeId) {
+        Bundle args = new Bundle();
+        args.putSerializable(ARG_CRIME_ID, crimeId);
+//        args.putInt(ITEM_POSITION, itemPosition);
 
         CrimeFragment fragment = new CrimeFragment();
         fragment.setArguments(args);
@@ -212,6 +223,7 @@ public class CrimeFragment extends Fragment {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                 mCrime.setSolved(isChecked);
+                updateCrime();
             }
         });
 
@@ -226,6 +238,7 @@ public class CrimeFragment extends Fragment {
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                 mCrime.setTitle(charSequence.toString());
+                updateCrime();
             }
 
             @Override
@@ -263,6 +276,7 @@ public class CrimeFragment extends Fragment {
         if (requestCode == REQUEST_DATE) {
             Date date = (Date) data.getSerializableExtra(DatePickerFragment.EXTRA_DATE);
             mCrime.setDate(date);
+            updateCrime();
             updateDate();
         } else if (requestCode == REQUEST_CONTACT && data != null) {
             Uri contactUri = data.getData();
@@ -281,6 +295,7 @@ public class CrimeFragment extends Fragment {
                 cursor.moveToFirst();
                 String suspect = cursor.getString(0);
                 mCrime.setSuspect(suspect);
+                updateCrime();
                 mSuspectButton.setText(suspect);
             } finally {
                 cursor.close();
@@ -316,8 +331,14 @@ public class CrimeFragment extends Fragment {
                 cursor.close();
             }
         } else if (requestCode == REQUEST_PHOTO) {
+            updateCrime();
             updatePhotoView();
         }
+    }
+
+    private void updateCrime() {
+        CrimeLab.get(getActivity()).updateCrime(mCrime);
+        mCallbacks.onCrimeUpdate(mCrime);
     }
 
     @Override
@@ -380,7 +401,6 @@ public class CrimeFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-
         CrimeLab.get(getActivity()).updateCrime(mCrime);
     }
 }

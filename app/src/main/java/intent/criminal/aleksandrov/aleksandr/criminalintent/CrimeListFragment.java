@@ -42,13 +42,6 @@ public class CrimeListFragment extends Fragment {
     private boolean mSubtitleVisible;
     private Callbacks mCallbacks;
 
-    /**
-     * Обязательный интерфейс для активности-хоста.
-     */
-    public interface Callbacks {
-        void onCrimeSelected(Crime crime);
-    }
-
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
@@ -62,9 +55,14 @@ public class CrimeListFragment extends Fragment {
     }
 
     @Override
+    public void onDetach() {
+        super.onDetach();
+        mCallbacks = null;
+    }
+
+    @Override
     public void onDestroy() {
         super.onDestroy();
-        mCallbacks = null;
     }
 
     private void updateSubtitle() {
@@ -108,7 +106,7 @@ public class CrimeListFragment extends Fragment {
         return view;
     }
 
-    private void updateUI() {
+    public void updateUI() {
         CrimeLab crimeLab = CrimeLab.get(getActivity());
         List<Crime> crimes = crimeLab.getCrimes();
 
@@ -168,8 +166,8 @@ public class CrimeListFragment extends Fragment {
     private void createNewCrime() {
         Crime crime = new Crime();
         CrimeLab.get(getActivity()).addCrime(crime);
-        Intent intent = new CrimePagerActivity().newIntent(getActivity(), crime.getId(), mSubtitleVisible);
-        startActivity(intent);
+        updateUI();
+        mCallbacks.onCrimeSelected(crime);
     }
 
     @Override
@@ -218,8 +216,9 @@ public class CrimeListFragment extends Fragment {
 
         @Override
         public void onClick(View view) {
-            Intent intent = CrimePagerActivity.newIntent(getActivity(), mCrime.getId(), mSubtitleVisible);
-            startActivityForResult(intent, REQUEST_CRIME);
+//            Intent intent = CrimePagerActivity.newIntent(getActivity(), mCrime.getId(), mSubtitleVisible);
+//            startActivityForResult(intent, REQUEST_CRIME);
+            mCallbacks.onCrimeSelected(mCrime);
         }
     }
 
